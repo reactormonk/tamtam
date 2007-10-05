@@ -1,1 +1,2 @@
 Implement pseudo-classes and pseudo-elements like :hover, etc.
+Document "last one wins" inline rules.
