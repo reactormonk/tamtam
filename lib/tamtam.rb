@@ -1,6 +1,5 @@
 require "rubygems"
 require "hpricot"
-
 # Takes CSS + HTML and converts it to inline styles.
 # css    <=  '#foo { font-color: blue; }'
 # html   <=  '<div id="foo">woot</div>'    
@@ -13,6 +12,9 @@ require "hpricot"
 # Sponsor: Gary Levitt of MadMimi.com
 class TamTam
   UNSUPPORTED = /(::first-letter|:link|:visited|:hover|:active)$/
+  
+  PSEUDO_ELEMENTS = /(:first-letter|:first-line|:before|:after)$/ 
+  PSEUDO_CLASSES = /(:active|:focus|:hover|:link|:visited|:first-child|:lang)$/
   
   class << self
     def inline(args)
@@ -27,8 +29,50 @@ class TamTam
       doc.to_s
     end
 
+    def calculate_selector_specificity(css, options = {:a => true, :b => true, :c => true} )
+      specified_css = {}
+      raw_styles(css).each_with_index do |raw_style, index|
+        selectors, declarations = parse(raw_style)        
+        selectors.split(",").map{ |s| s.strip }.each do |selector|
+          next if selector.match(UNSUPPORTED)
+          specified_css[selector] = {:declarations => declarations}
+          specified_css[selector].merge!(:a => a_specificity(selector)) if options[:a]
+          specified_css[selector].merge!(:b => b_specificity(selector)) if options[:b]
+          specified_css[selector].merge!(:c => c_specificity(selector)) if options[:c]
+        end 
+      end
+      specified_css 
+    end
+
     private
-    
+      def a_specificity(selector)
+        selector.scan(/#[\w-]+/).size
+      end
+
+      def b_specificity(selector)
+        pieces = selector.split(" ")
+        i = 0
+        pieces.each do |piece|
+          i += piece.scan(".").size
+          i += piece.scan("*[").size
+        end
+        i
+      end
+
+      def c_specificity(selector)
+        element_pieces = selector.split(" ").reject{|s| s =~ /^(#|\.|\*)/ }
+        i = 0
+        element_pieces.each do |element_piece|
+          if element_piece.scan("+")
+            elements = element_piece.split("+").reject{|s| s =~ /^(#|\.|\*)/ }
+            i += elements.size
+          else 
+            i += 1
+          end
+        end
+        i
+      end
+      
       def process(args)
         if args[:document]
           doc = Hpricot(args[:document])
