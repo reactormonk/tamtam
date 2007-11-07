@@ -28,23 +28,46 @@ class TamTam
       end
       doc.to_s
     end
-    
-    def calculate_selector_specificity(css, options = {:a => true, :b => true, :c => true} )
+   
+    def specificity(css)
       specified_css = {}
       raw_styles(css).each_with_index do |raw_style, index|
         selectors, declarations = parse(raw_style)        
         selectors.split(",").map{ |s| s.strip }.each do |selector|
           next if selector.match(UNSUPPORTED)
           specified_css[selector] = {:declarations => declarations}
-          specified_css[selector].merge!(:a => a_specificity(selector)) if options[:a]
-          specified_css[selector].merge!(:b => b_specificity(selector)) if options[:b]
-          specified_css[selector].merge!(:c => c_specificity(selector)) if options[:c]
+          specified_css[selector][:specificity] = calculate_specificity(selector) 
+          specified_css[selector][:index] = index
+        end 
+      end
+      specified_css 
+    end
+
+    def calculate_selector_specificity(css, options = {:a => true, :b => true, :c => true, :index => true} )
+      specified_css = {}
+      raw_styles(css).each_with_index do |raw_style, index|
+        selectors, declarations = parse(raw_style)        
+        selectors.split(",").map{ |s| s.strip }.each do |selector|
+          next if selector.match(UNSUPPORTED)
+          specified_css[selector] = {:declarations => declarations}
+          specified_css[selector][:a] = a_specificity(selector) if options[:a]
+          specified_css[selector][:b] = b_specificity(selector) if options[:b]
+          specified_css[selector][:c] = c_specificity(selector) if options[:c]
+          specified_css[selector][:index] = index if options[:index]
         end 
       end
       specified_css 
     end
 
     private
+      def calculate_specificity(selector)
+        specificty = 0
+        specificty += a_specificity(selector) * 100
+        specificty += b_specificity(selector) * 10
+        specificty += c_specificity(selector)
+        specificty 
+      end
+
       def a_specificity(selector)
         selector.scan(/#[\w-]+/).size
       end

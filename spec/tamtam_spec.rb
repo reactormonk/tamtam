@@ -250,9 +250,9 @@ describe TamTam do
       h1, h2, h3 {}
     ~ 
     expected_output = { 
-      'h1' => { :declarations => "", :a => 0, :b => 0, :c => 1 },
-      'h2' => { :declarations => "", :a => 0, :b => 0, :c => 1 },
-      'h3' => { :declarations => "", :a => 0, :b => 0, :c => 1 } 
+      'h1' => { :declarations => "", :a => 0, :b => 0, :c => 1, :index => 0 },
+      'h2' => { :declarations => "", :a => 0, :b => 0, :c => 1, :index => 0 },
+      'h3' => { :declarations => "", :a => 0, :b => 0, :c => 1, :index => 0 } 
     }
     TamTam.calculate_selector_specificity(css).should == expected_output
   end
@@ -262,12 +262,24 @@ describe TamTam do
       LI.red.level, #i_1 .c_1 li, UL OL+LI { color: blue; }
     ~ 
     expected_output = { 
-      'LI.red.level' => { :declarations => "color: blue;", :a => 0, :b => 2, :c => 1 },
-      '#i_1 .c_1 li' => { :declarations => "color: blue;", :a => 1, :b => 1, :c => 1 },
-      'UL OL+LI' => { :declarations => "color: blue;", :a => 0, :b => 0, :c => 3 } 
+      'LI.red.level' => { :declarations => "color: blue;", :a => 0, :b => 2, :c => 1, :index => 0 },
+      '#i_1 .c_1 li' => { :declarations => "color: blue;", :a => 1, :b => 1, :c => 1, :index => 0 },
+      'UL OL+LI' => { :declarations => "color: blue;", :a => 0, :b => 0, :c => 3, :index => 0 } 
     }
     TamTam.calculate_selector_specificity(css).should == expected_output
   end
 
+  it "should specify" do 
+    css = %~
+      #i_1 .c_1 li, UL OL+LI { color: blue; }
+      LI.red.level { color: green; }
+    ~ 
+    expected_output = { 
+      '#i_1 .c_1 li' => { :declarations => "color: blue;", :specificity => 111, :index => 1 },
+      'UL OL+LI' => { :declarations => "color: blue;", :specificity => 3, :index => 1 }, 
+      'LI.red.level' => { :declarations => "color: green;", :specificity => 21, :index => 0 }
+    }
+    TamTam.specificity(css).should == expected_output
+  end
 
 end
