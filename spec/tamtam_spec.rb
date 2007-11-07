@@ -120,6 +120,13 @@ describe TamTam do
     TamTam.inline(:css => css, :body => body).size.should == expected_output.size
   end  
  
+  it "should ignore comments" do
+    css = "/* div\n { background-color: black; } */ #foo { font-color: blue; } /* todo something */ #bar { font-size: 200%; }"
+    document = '<html><head><style>' + css + '</style></head><body><div id="foo"><div id="bar">woot</div></div></body></html>'
+    expected_output = '<html><head><style>' + css + '</style></head><body><div id="foo" style="font-color: blue;"><div id="bar" style="font-size: 200%;">woot</div></div></body></html>'
+    TamTam.inline(:document => document).should == expected_output        
+  end
+ 
   it "should not remove other declarations when applying new declarations" do
     css = %~
       p { 

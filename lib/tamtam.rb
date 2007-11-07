@@ -8,7 +8,7 @@ require "hpricot"
 # The class uses regular expressions to parse the CSS.
 # The regular expressions are based on CPAN's CSS::Parse::Lite.
 #
-# Author: Dave Hoover of Obtiva Corp.
+# Author: Dave Hoover and Brian Tatnall of Obtiva Corp.
 # Sponsor: Gary Levitt of MadMimi.com
 class TamTam
   UNSUPPORTED = /(::first-letter|:link|:visited|:hover|:active)$/
@@ -28,7 +28,7 @@ class TamTam
       end
       doc.to_s
     end
-
+    
     def calculate_selector_specificity(css, options = {:a => true, :b => true, :c => true} )
       specified_css = {}
       raw_styles(css).each_with_index do |raw_style, index|
@@ -85,7 +85,8 @@ class TamTam
     
       def raw_styles(css)
         return [] if css.nil?
-        css = css.gsub(/[\r\n]/, " ")
+        css.gsub!(/[\r\n]/, " ")
+        css.gsub!(/\/\*.*?\*\//, "")
         validate(css)
         # jamming brackets back on, wishing for look-behinds
         styles = css.strip.split("}").map { |style| style + "}" }
@@ -108,7 +109,7 @@ class TamTam
       def parse(raw_style)
         # Regex from CSS::Parse::Lite
         data = raw_style.match(/^\s*([^{]+?)\s*\{(.*)\}\s*$/)
-        raise "Invalid style: #{style}" if data.nil?
+        raise InvalidStyleException, "Trouble on style: #{style}" if data.nil?
         data.captures.map { |s| s.strip }
       end
       
