@@ -132,7 +132,7 @@ class TamTam
       def parse(raw_style)
         # Regex from CSS::Parse::Lite
         data = raw_style.match(/^\s*([^{]+?)\s*\{(.*)\}\s*$/)
-        raise InvalidStyleException, "Trouble on style: #{style}" if data.nil?
+        raise InvalidStyleException, "Trouble on style: #{raw_style}" if data.nil?
         data.captures.map { |s| s.strip }
       end
       
