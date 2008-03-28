@@ -141,4 +141,9 @@ describe TamTam do
     expected_output = '<html><head></head><body><p class="green" style="color: green; font-size: 10px;">woot</p></body></html>'
     TamTam.inline(:css => css, :body => body).should == expected_output
   end
+  
+  it "should choke on bad css" do    
+    html = "<html>\n<head>\n<style>\np { font-size: pt; Viral Marketing &ndash; A developing media channel</span></p>\n                <p class=\"Copy\">Issue 4 - April 2008<br>\n                </p>\n                <p class=\"Copy\">A lot of research has come across our desk lately (and most probably yours), as to the success and viability of viral marketing. What we thought may be useful is a quick introduction, or review of:</p>\n                <p class=\"Copy\">&bull; What viral is<br>\n&bull; Where viral is heading<br>\n&bull; Viral limitations and opportunities </p>\n                <p class=\"Copy\">As you no doubt may be aware viral marketing started life in the realm of the online marketer, in areas like spam, or those annoying pop-up screens that keep appearing on your screen!}\n</style>\n</head>\n<body>\t\t\n<p>You can have my jellyfish <br />\n\tI'm not a sellyfish. ~ Ogden Nash\n</p>\n</body>\n</html>\n\t\t"
+    lambda { TamTam.inline(:document => html) }.should raise_error(InvalidStyleException)
+  end
 end

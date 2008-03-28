@@ -10,87 +10,87 @@ require "hpricot"
 #
 # Author: Dave Hoover and Brian Tatnall of Obtiva Corp.
 # Sponsor: Gary Levitt of MadMimi.com
-class TamTam
+module TamTam
+  extend self
+  
   UNSUPPORTED = /(:first-letter|:link|:visited|:hover|:active)$/
   
-  class << self
-    def inline(args)
-      css, doc = process(args)
-      raw_styles(css).each do |raw_style|
-        style, contents = parse(raw_style)        
-        next if style.match(UNSUPPORTED)
-        (doc/style).each do |element|
-          apply_to(element, style, contents)
-        end
+  def inline(args)
+    css, doc = process(args)
+    raw_styles(css).each do |raw_style|
+      style, contents = parse(raw_style)        
+      next if style.match(UNSUPPORTED)
+      (doc/style).each do |element|
+        apply_to(element, style, contents)
       end
-      doc.to_s
     end
-   
+    doc.to_s
+  end
+ 
 private
-      
-    def process(args)
-      if args[:document]
-        doc = Hpricot(args[:document])
-        style = (doc/"style").first
-        [(style && style.inner_html), doc]
-      else
-        [args[:css], Hpricot(args[:body])]
-      end
+    
+  def process(args)
+    if args[:document]
+      doc = Hpricot(args[:document])
+      style = (doc/"style").first
+      [(style && style.inner_html), doc]
+    else
+      [args[:css], Hpricot(args[:body])]
     end
+  end
+
+  def raw_styles(css)
+    return [] if css.nil?
+    css.gsub!(/[\r\n]/, " ") # remove newlines
+    css.gsub!(/\/\*.*?\*\//, "") # strip /* comments */
+    validate(css)
+    # splitting on brackets and jamming them back on, wishing for look-behinds
+    styles = css.strip.split("}").map { |style| style + "}" }
+    # running backward to allow for "last one wins"
+    styles.reverse
+  end
   
-    def raw_styles(css)
-      return [] if css.nil?
-      css.gsub!(/[\r\n]/, " ") # remove newlines
-      css.gsub!(/\/\*.*?\*\//, "") # strip /* comments */
-      validate(css)
-      # splitting on brackets and jamming them back on, wishing for look-behinds
-      styles = css.strip.split("}").map { |style| style + "}" }
-      # running backward to allow for "last one wins"
-      styles.reverse
+  def validate(css)
+    lefts = bracket_count(css, "{")
+    rights = bracket_count(css, "}")
+    if lefts != rights
+      raise InvalidStyleException, "Found #{lefts} left brackets and #{rights} right brackets in:\n #{css}"
     end
-    
-    def validate(css)
-      lefts = bracket_count(css, "{")
-      rights = bracket_count(css, "}")
-      if lefts != rights
-        raise InvalidStyleException, "Found #{lefts} left brackets and #{rights} right brackets in:\n #{css}"
-      end
+  end
+  
+  def bracket_count(css, bracket)
+    css.scan(Regexp.new(Regexp.escape(bracket))).size
+  end
+  
+  def parse(raw_style)
+    # Regex from CSS::Parse::Lite
+    data = raw_style.match(/^\s*([^{]+?)\s*\{(.*)\}\s*$/)
+    raise InvalidStyleException, "Trouble on style: #{raw_style}" if data.nil?
+    data.captures.map { |s| s.strip }
+  end
+  
+  def apply_to(element, style, contents)
+    return unless element.respond_to?(:get_attribute)
+    current_style = to_hash(element.get_attribute(:style))
+    new_styles = to_hash(contents).merge(current_style)
+    element.set_attribute(:style, prepare(new_styles))
+  rescue Exception => e
+    raise InvalidStyleException, "Trouble on style #{style} on element #{element}"
+  end
+  
+  def to_hash(style)
+    return {} if style.nil?
+    hash = {}
+    pieces = style.strip.split(";").map { |s| s.strip.split(":").map { |kv| kv.strip } }
+    pieces.each do |key, value|
+      hash[key] = value
     end
-    
-    def bracket_count(css, bracket)
-      css.scan(Regexp.new(Regexp.escape(bracket))).size
-    end
-    
-    def parse(raw_style)
-      # Regex from CSS::Parse::Lite
-      data = raw_style.match(/^\s*([^{]+?)\s*\{(.*)\}\s*$/)
-      raise InvalidStyleException, "Trouble on style: #{raw_style}" if data.nil?
-      data.captures.map { |s| s.strip }
-    end
-    
-    def apply_to(element, style, contents)
-      return unless element.respond_to?(:get_attribute)
-      current_style = to_hash(element.get_attribute(:style))
-      new_styles = to_hash(contents).merge(current_style)
-      element.set_attribute(:style, prepare(new_styles))
-    rescue Exception => e
-      raise Exception.new(e), "Trouble on style #{style} on element #{element}: #{e}"
-    end
-    
-    def to_hash(style)
-      return {} if style.nil?
-      hash = {}
-      pieces = style.strip.split(";").map { |s| s.strip.split(":").map { |kv| kv.strip } }
-      pieces.each do |key, value|
-        hash[key] = value
-      end
-      hash
-    end
-    
-    def prepare(style_hash)
-      sorted_styles = style_hash.keys.sort.map { |key| key + ": " + style_hash[key] }
-      sorted_styles.join("; ").strip + ";"
-    end
+    hash
+  end
+  
+  def prepare(style_hash)
+    sorted_styles = style_hash.keys.sort.map { |key| key + ": " + style_hash[key] }
+    sorted_styles.join("; ").strip + ";"
   end
 end
 
