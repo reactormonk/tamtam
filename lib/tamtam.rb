@@ -81,11 +81,13 @@ private
   def to_hash(style)
     return {} if style.nil?
     hash = {}
-    # Split up the different styles, then
-    # grab just the style name (color) and style body (blue),
+    # Split up the different styles,
+    # can't just split on semicolons because they could be in url(foo;bar.png)
+    styles = style.strip.scan(/((?:\(.*\)|[^;])+)/).flatten
+    # Grab just the style name (color) and style body (blue),
     # making sure not to split on the colon in url(http://...), then
     # turn any double-quotes into single-quotes because Hpricot wants to escape double-quotes
-    pieces = style.strip.split(";").map { |s| s.strip.split(":", 2).map { |kv| kv.strip.gsub('"', "'") } }
+    pieces = styles.map { |s| s.strip.split(":", 2).map { |kv| kv.strip.gsub('"', "'") } }
     pieces.each do |key, value|
       hash[key] = value
     end

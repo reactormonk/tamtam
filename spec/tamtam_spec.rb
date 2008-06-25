@@ -100,6 +100,13 @@ describe TamTam do
     expected_output = %q(<div class="foo" style="background: url('http://google.com/image.png');"></div>)
     TamTam.inline(:css => css, :body => body).should == expected_output        
   end
+  
+  it "should handle urls with semicolons" do
+    css = ".foo { background: url(/images/blah;123.png); }"
+    body = '<div class="foo"></div>'
+    expected_output = %q(<div class="foo" style="background: url(/images/blah;123.png);"></div>)
+    TamTam.inline(:css => css, :body => body).should == expected_output        
+  end
 
   it "should handle unbalanced brackets in bad css" do
     css = '.foo { color: black;' + "\n" + '.bar { color: white; }'
