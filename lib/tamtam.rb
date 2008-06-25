@@ -63,7 +63,7 @@ private
   end
   
   def parse(raw_style)
-    # Regex from CSS::Parse::Lite
+    # Regex from CPAN's CSS::Parse::Lite
     data = raw_style.match(/^\s*([^{]+?)\s*\{(.*)\}\s*$/)
     raise InvalidStyleException, "Trouble on style: #{raw_style}" if data.nil?
     data.captures.map { |s| s.strip }
@@ -81,7 +81,11 @@ private
   def to_hash(style)
     return {} if style.nil?
     hash = {}
-    pieces = style.strip.split(";").map { |s| s.strip.split(":").map { |kv| kv.strip } }
+    # Split up the different styles, then
+    # grab just the style name (color) and style body (blue),
+    # making sure not to split on the colon in url(http://...), then
+    # turn any double-quotes into single-quotes because Hpricot wants to escape double-quotes
+    pieces = style.strip.split(";").map { |s| s.strip.split(":", 2).map { |kv| kv.strip.gsub('"', "'") } }
     pieces.each do |key, value|
       hash[key] = value
     end
