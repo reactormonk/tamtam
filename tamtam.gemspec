@@ -12,5 +12,4 @@ Gem::Specification.new do |s|
         s.add_dependency('hpricot')
         s.requirements = []
         s.files = ["lib/tamtam.rb"]
-        s.autorequire = %q{tamtam}
 end
