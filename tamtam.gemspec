@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
         s.name = %q{tamtam}
-        s.version = "0.0.2" 
+        s.version = "0.0.3" 
         s.rubyforge_project = 'tamtam'
         s.date = %q{2007-10-05}
         s.summary = %q{Inline a CSS stylesheet into an HTML document.}

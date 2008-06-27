@@ -13,7 +13,7 @@ require "hpricot"
 module TamTam
   extend self
   
-  UNSUPPORTED = /(:first-letter|:link|:visited|:hover|:active)$/
+  UNSUPPORTED = /(:first-letter|:link|:visited|:hover|:active)(\s|$)/
   
   def inline(args)
     css, doc = process(args)
@@ -30,6 +30,7 @@ module TamTam
 private
     
   def process(args)
+    return_value =
     if args[:document]
       doc = Hpricot(args[:document])
       style = (doc/"style").first
@@ -37,6 +38,10 @@ private
     else
       [args[:css], Hpricot(args[:body])]
     end
+    if args[:prune_classes]
+      (doc/"*").each { |e| e.remove_attribute(:class) if e.respond_to?(:remove_attribute) }
+    end
+    return_value
   end
 
   def raw_styles(css)
