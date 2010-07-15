@@ -21,9 +21,11 @@ module TamTam
       style, contents = parse(raw_style)        
       next if style.match(UNSUPPORTED)
       (doc/style).each do |element|
+        next if should_ignore?(element)
         apply_to(element, style, contents)
       end
     end
+    remove_directives(doc)
     doc.to_s
   end
  
@@ -42,6 +44,20 @@ private
       (doc/"*").each { |e| e.remove_attribute(:class) if e.respond_to?(:remove_attribute) }
     end
     return_value
+  end
+  
+  def should_ignore?(element)
+    el = element
+    until el.nil? do
+      return true if el.respond_to?(:attributes) and !el.attributes["data-tamtam"].nil? and el.attributes["data-tamtam"].match(/ignore/)
+      el = el.parent
+    end
+  end
+  
+  def remove_directives(doc)
+    (doc/'[@data-tamtam]').each do |element|
+      element.remove_attribute("data-tamtam")
+    end
   end
 
   def raw_styles(css)

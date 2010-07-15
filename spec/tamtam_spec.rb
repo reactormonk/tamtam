@@ -4,15 +4,15 @@ require "tamtam"
 describe TamTam do
 
   it "should inline a style onto a div with id" do
-    css = '#foo { font-color: blue; }'
+    css = '#foo { color: blue; }'
     body = '<div id="foo">woot</div>'    
-    expected_output = '<div id="foo" style="font-color: blue;">woot</div>'
+    expected_output = '<div id="foo" style="color: blue;">woot</div>'
     TamTam.inline(:css => css, :body => body).should == expected_output
   end
   
   it "should inline a style onto a span with class" do
     css = 'span.woo-hoo { font-family: arial; }'
-    body = '<span class="woo-hoo">woot</div>'    
+    body = '<span class="woo-hoo">woot</span>'    
     expected_output = '<span class="woo-hoo" style="font-family: arial;">woot</span>'
     TamTam.inline(:css => css, :body => body).should == expected_output    
   end
@@ -131,7 +131,7 @@ describe TamTam do
     css = open(File.join(File.dirname(__FILE__), "data", "twitter.css")).read
     body = open(File.join(File.dirname(__FILE__), "data", "twitter.html")).read
     expected_output = open(File.join(File.dirname(__FILE__), "data", "expected.html")).read
-    TamTam.inline(:css => css, :body => body).size.should == expected_output.size
+    TamTam.inline(:css => css, :body => body) == expected_output
   end  
  
   it "should ignore comments" do
@@ -160,4 +160,32 @@ describe TamTam do
     html = "<html>\n<head>\n<style>\np { font-size: pt; Viral Marketing &ndash; A developing media channel</span></p>\n                <p class=\"Copy\">Issue 4 - April 2008<br>\n                </p>\n                <p class=\"Copy\">A lot of research has come across our desk lately (and most probably yours), as to the success and viability of viral marketing. What we thought may be useful is a quick introduction, or review of:</p>\n                <p class=\"Copy\">&bull; What viral is<br>\n&bull; Where viral is heading<br>\n&bull; Viral limitations and opportunities </p>\n                <p class=\"Copy\">As you no doubt may be aware viral marketing started life in the realm of the online marketer, in areas like spam, or those annoying pop-up screens that keep appearing on your screen!}\n</style>\n</head>\n<body>\t\t\n<p>You can have my jellyfish <br />\n\tI'm not a sellyfish. ~ Ogden Nash\n</p>\n</body>\n</html>\n\t\t"
     lambda { TamTam.inline(:document => html) }.should raise_error(InvalidStyleException)
   end
+  
+  it "should remove data-tamtam directives" do
+    document = '<html><head><style></style></head><body><div data-tamtam="ignore">foo</div><div>bar</div></body></html>'
+    expected = '<html><head><style></style></head><body><div>foo</div><div>bar</div></body></html>'
+    TamTam.inline(:document => document).should == expected        
+  end
+  
+  it "should ignore elements with a data-tamtam='ignore' directive" do
+    css = "div\n { color: black; }"
+    document = '<html><head><style>' + css + '</style></head><body><div data-tamtam="ignore">foo</div><div>bar</div></body></html>'
+    expected = '<html><head><style>' + css + '</style></head><body><div>foo</div><div style="color: black;">bar</div></body></html>'
+    TamTam.inline(:document => document).should == expected        
+  end
+
+  it "should ignore elements that have a parent with a data-tamtam='ignore' directive" do
+    css = "div\n { color: black; }"
+    document = '<html><head><style>' + css + '</style></head><body><div data-tamtam="ignore"><div>foo</div></div><div><div>bar</div></div></body></html>'
+    expected = '<html><head><style>' + css + '</style></head><body><div><div>foo</div></div><div style="color: black;"><div style="color: black;">bar</div></div></body></html>'
+    TamTam.inline(:document => document).should == expected        
+  end
+  
+  it "should apply styles to the root element" do
+    css = "div { color: red; }"
+    body = "<div>foo</div>"
+    expected = '<div style="color: red;">foo</div>'
+    TamTam.inline(:body => body, :css => css).should == expected
+  end
+  
 end
