@@ -188,4 +188,17 @@ describe TamTam do
     TamTam.inline(:body => body, :css => css).should == expected
   end
   
+  it "should prefix all styles when passed css" do
+    css = "div { color: red; }\nul li.first { margin: 0 10px; background-color: #999; }"
+    expected = "#tamtam div { color: red; }\n#tamtam ul li.first { margin: 0 10px; background-color: #999; }"
+    TamTam.prefix(:css => css, :prefix => "#tamtam").should == expected
+  end
+  
+  it "should prefix all styles and replace in document when passed a document" do
+    css = "div\n { color: black; }"
+    document = '<html><head><style>div { color: red; }</style></head><body><div>foo bar</div></body></html>'
+    expected = '<html><head><style>#tamtam div { color: red; }</style></head><body><div>foo bar</div></body></html>'
+    TamTam.prefix(:document => document, :prefix => "#tamtam").should == expected        
+  end
+  
 end

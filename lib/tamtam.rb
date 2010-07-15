@@ -28,6 +28,33 @@ module TamTam
     remove_directives(doc)
     doc.to_s
   end
+  
+  # Prefixes all style selectors 
+  # Will return updated styles if passed :css
+  # Will return the updated document if passed :document
+  def prefix(args)
+    if args[:css]
+      css = args[:css]
+    elsif args[:document]
+      doc = Hpricot(args[:document])
+      style = (doc/"style").first
+      return doc.to_s if style.nil?
+      css = style.inner_html
+    end
+    
+    prefix = args[:prefix].to_s
+    
+    new_styles = []
+    raw_styles(css, true).each do |raw_style|
+      selector, rule = parse(raw_style)
+      new_styles << "#{prefix} #{selector} { #{rule} }"
+    end
+    new_styles = new_styles.join("\n")
+    return new_styles if !style
+    
+    style.inner_html = new_styles
+    doc.to_s
+  end
  
 private
     
@@ -55,12 +82,10 @@ private
   end
   
   def remove_directives(doc)
-    (doc/'[@data-tamtam]').each do |element|
-      element.remove_attribute("data-tamtam")
-    end
+    (doc/'[@data-tamtam]').remove_attr("data-tamtam")
   end
 
-  def raw_styles(css)
+  def raw_styles(css, no_reverse = false)
     return [] if css.nil?
     css.gsub!(/[\r\n]/, " ") # remove newlines
     css.gsub!(/\/\*.*?\*\//, "") # strip /* comments */
@@ -68,7 +93,8 @@ private
     # splitting on brackets and jamming them back on, wishing for look-behinds
     styles = css.strip.split("}").map { |style| style + "}" }
     # running backward to allow for "last one wins"
-    styles.reverse
+    styles.reverse! unless no_reverse
+    styles
   end
   
   def validate(css)
